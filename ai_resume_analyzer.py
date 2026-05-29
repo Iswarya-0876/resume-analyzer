@@ -11,7 +11,7 @@ Original file is located at
 
 #pip install transformers sentence-transformers
 
-!pip install pdfplumber nltk scikit-learn pandas
+#!pip install pdfplumber nltk scikit-learn pandas
 
 import pdfplumber
 import pandas as pd
