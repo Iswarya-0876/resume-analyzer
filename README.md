@@ -41,8 +41,6 @@ AI-Resume-Analyzer/
 │
 ├── static/
 │      └── style.css
-│
-└── uploads/
 ```
 
 ---
