@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/18iOBI12TpxUy7rX4vzgctAqE4ziw383y
 """
 
-pip install streamlit pandas numpy scikit-learn nltk spacy pdfplumber
+#pip install streamlit pandas numpy scikit-learn nltk spacy pdfplumber
 
 pip install transformers sentence-transformers
 
@@ -17,6 +17,8 @@ import pdfplumber
 import pandas as pd
 import nltk
 from sklearn.feature_extraction.text import CountVectorizer
+import streamlit as st
+import pdfplumber
 
 resume_path = "Iswarya Resume.pdf"
 
