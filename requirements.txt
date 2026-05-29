@@ -1,5 +1,7 @@
 streamlit
-pdfplumber
-scikit-learn
 pandas
 numpy
+scikit-learn
+nltk
+spacy
+pdfplumber
