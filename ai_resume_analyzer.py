@@ -9,7 +9,7 @@ Original file is located at
 
 #pip install streamlit pandas numpy scikit-learn nltk spacy pdfplumber
 
-pip install transformers sentence-transformers
+#pip install transformers sentence-transformers
 
 !pip install pdfplumber nltk scikit-learn pandas
 
