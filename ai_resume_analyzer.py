@@ -124,4 +124,3 @@ values = [len(skills), len(skills_db)-len(skills)]
 plt.pie(values, labels=labels, autopct='%1.1f%%')
 plt.title("Skill Analysis")
 plt.show()
-
