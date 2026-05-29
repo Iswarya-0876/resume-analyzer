@@ -26,14 +26,35 @@ def extract_text(pdf_file):
     text = ""
 
     with pdfplumber.open(pdf_file) as pdf:
+
         for page in pdf.pages:
-            text += page.extract_text()
+
+            extracted = page.extract_text()
+
+            if extracted:
+                text += extracted
 
     return text
 
 resume_text = extract_text(resume_path)
 
 print(resume_text)
+
+st.title("AI Resume Analyzer")
+
+uploaded_file = st.file_uploader(
+    "Upload Resume PDF",
+    type="pdf"
+)
+
+if uploaded_file is not None:
+
+    resume_text = extract_text(uploaded_file)
+
+    st.subheader("Extracted Resume Text")
+
+    st.write(resume_text[:1000])
+    
 
 skills_db = [
     "python",
