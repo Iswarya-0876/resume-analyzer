@@ -1,125 +1,226 @@
-from flask import Flask, render_template, request
+import streamlit as st
 import pdfplumber
-from sklearn.feature_extraction.text import CountVectorizer
+import docx
+import re
+from collections import Counter
 
-app = Flask(__name__)
+# ---------------- PAGE CONFIG ---------------- #
+st.set_page_config(
+    page_title="AI Resume Analyzer",
+    page_icon="📄",
+    layout="wide"
+)
 
-# --------------------------
-# Skills Database
-# --------------------------
+# ---------------- TITLE ---------------- #
+st.title("📄 AI Resume Analyzer")
+st.markdown("Upload your resume and get ATS score, skills analysis, and role recommendations.")
 
-skills_db = [
-    "python",
-    "machine learning",
-    "deep learning",
-    "sql",
-    "tensorflow",
-    "nlp",
-    "data analysis"
-]
+# ---------------- SKILLS DATABASE ---------------- #
+SKILLS_DB = {
+    "Python": ["python", "numpy", "pandas", "matplotlib"],
+    "Machine Learning": ["machine learning", "sklearn", "scikit-learn"],
+    "Deep Learning": ["tensorflow", "keras", "pytorch"],
+    "Data Analysis": ["excel", "power bi", "tableau", "sql"],
+    "Web Development": ["html", "css", "javascript", "flask", "streamlit"],
+    "Cloud": ["aws", "azure", "gcp"],
+    "Database": ["mysql", "mongodb", "postgresql"],
+}
 
-# --------------------------
-# Extract Text
-# --------------------------
+ROLE_RECOMMENDATIONS = {
+    "Python": "Python Developer",
+    "Machine Learning": "ML Engineer",
+    "Deep Learning": "AI Engineer",
+    "Data Analysis": "Data Analyst",
+    "Web Development": "Full Stack Developer",
+    "Cloud": "Cloud Engineer",
+    "Database": "Database Administrator"
+}
 
-def extract_text(pdf_file):
-
+# ---------------- FILE TEXT EXTRACTION ---------------- #
+def extract_text_from_pdf(file):
     text = ""
-
-    with pdfplumber.open(pdf_file) as pdf:
-
+    with pdfplumber.open(file) as pdf:
         for page in pdf.pages:
-
-            if page.extract_text():
-
-                text += page.extract_text()
-
+            extracted = page.extract_text()
+            if extracted:
+                text += extracted
     return text
 
-# --------------------------
-# Extract Skills
-# --------------------------
+def extract_text_from_docx(file):
+    doc = docx.Document(file)
+    return "\n".join([para.text for para in doc.paragraphs])
 
+def extract_text(uploaded_file):
+    if uploaded_file.name.endswith(".pdf"):
+        return extract_text_from_pdf(uploaded_file)
+
+    elif uploaded_file.name.endswith(".docx"):
+        return extract_text_from_docx(uploaded_file)
+
+    elif uploaded_file.name.endswith(".txt"):
+        return str(uploaded_file.read(), "utf-8")
+
+    return ""
+
+# ---------------- SKILL EXTRACTION ---------------- #
 def extract_skills(text):
-
     found_skills = []
 
     text = text.lower()
 
-    for skill in skills_db:
+    for category, skills in SKILLS_DB.items():
+        for skill in skills:
+            if skill.lower() in text:
+                found_skills.append(category)
 
-        if skill in text:
+    return list(set(found_skills))
 
-            found_skills.append(skill)
+# ---------------- ATS SCORE ---------------- #
+def calculate_ats_score(text):
+    score = 0
 
-    return found_skills
+    keywords = [
+        "python",
+        "machine learning",
+        "deep learning",
+        "projects",
+        "experience",
+        "skills",
+        "education",
+        "tensorflow",
+        "sql",
+        "data"
+    ]
 
-# --------------------------
-# ATS Score
-# --------------------------
+    text = text.lower()
 
-def ats_score(skills):
+    for keyword in keywords:
+        if keyword in text:
+            score += 10
 
-    score = (len(skills) / len(skills_db)) * 100
+    return min(score, 100)
 
-    return round(score, 2)
+# ---------------- RESUME SECTION DETECTION ---------------- #
+def detect_sections(text):
+    sections = []
 
-# --------------------------
-# Job Match %
-# --------------------------
+    possible_sections = [
+        "education",
+        "skills",
+        "projects",
+        "experience",
+        "certifications",
+        "internship",
+        "achievements"
+    ]
 
-def match_percentage(resume, jd):
+    text = text.lower()
 
-    text = [resume, jd]
+    for sec in possible_sections:
+        if sec in text:
+            sections.append(sec.title())
 
-    cv = CountVectorizer()
+    return sections
 
-    matrix = cv.fit_transform(text)
+# ---------------- FILE UPLOADER ---------------- #
+uploaded_file = st.file_uploader(
+    "Upload Resume",
+    type=["pdf", "docx", "txt"]
+)
 
-    similarity = (
-        matrix * matrix.T
-    ).toarray()[0][1]
+# ---------------- PROCESS FILE ---------------- #
+if uploaded_file is not None:
 
-    return round(similarity * 100, 2)
+    st.success("Resume uploaded successfully!")
 
-# --------------------------
-# Flask Routes
-# --------------------------
+    text = extract_text(uploaded_file)
 
-@app.route("/", methods=["GET", "POST"])
+    # ---------- Resume Preview ---------- #
+    with st.expander("📃 Resume Preview"):
+        st.text(text[:5000])
 
-def home():
+    # ---------- ATS Score ---------- #
+    ats_score = calculate_ats_score(text)
 
-    if request.method == "POST":
+    st.subheader("📊 ATS Score")
 
-        uploaded_file = request.files["resume"]
+    st.progress(ats_score / 100)
 
-        jd = request.form["jd"]
+    st.metric("ATS Score", f"{ats_score}/100")
 
-        resume_text = extract_text(uploaded_file)
+    # ---------- Skills ---------- #
+    skills = extract_skills(text)
 
-        skills = extract_skills(resume_text)
+    st.subheader("🛠 Detected Skills")
 
-        score = ats_score(skills)
+    if skills:
+        for skill in skills:
+            st.success(skill)
+    else:
+        st.warning("No major skills detected.")
 
-        match = match_percentage(
-            resume_text,
-            jd
-        )
+    # ---------- Sections ---------- #
+    sections = detect_sections(text)
 
-        return render_template(
-            "index.html",
-            skills=skills,
-            score=score,
-            match=match
-        )
+    st.subheader("📂 Resume Sections Found")
 
-    return render_template("index.html")
+    if sections:
+        st.write(sections)
+    else:
+        st.warning("Important resume sections missing.")
 
-# --------------------------
-# Run App
-# --------------------------
+    # ---------- Role Recommendation ---------- #
+    st.subheader("💼 Recommended Roles")
 
-if __name__ == "__main__":
+    recommended_roles = []
 
-    app.run(debug=True)
+    for skill in skills:
+        if skill in ROLE_RECOMMENDATIONS:
+            recommended_roles.append(
+                ROLE_RECOMMENDATIONS[skill]
+            )
+
+    recommended_roles = list(set(recommended_roles))
+
+    if recommended_roles:
+        for role in recommended_roles:
+            st.info(role)
+    else:
+        st.warning("No role recommendations available.")
+
+    # ---------- Word Count ---------- #
+    word_count = len(text.split())
+
+    st.subheader("📝 Resume Statistics")
+
+    col1, col2 = st.columns(2)
+
+    col1.metric("Total Words", word_count)
+    col2.metric("Detected Skills", len(skills))
+
+    # ---------- Suggestions ---------- #
+    st.subheader("🚀 Resume Improvement Suggestions")
+
+    suggestions = []
+
+    if ats_score < 60:
+        suggestions.append("Add more technical keywords.")
+
+    if "Projects" not in sections:
+        suggestions.append("Add a Projects section.")
+
+    if "Skills" not in sections:
+        suggestions.append("Add a Skills section.")
+
+    if word_count < 300:
+        suggestions.append("Resume content is too short.")
+
+    if suggestions:
+        for s in suggestions:
+            st.warning(s)
+    else:
+        st.success("Your resume looks strong!")
+
+# ---------------- FOOTER ---------------- #
+st.markdown("---")
+st.caption("Built with Streamlit + Python")
