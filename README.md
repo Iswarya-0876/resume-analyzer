@@ -131,3 +131,15 @@ http://127.0.0.1:5000
 * User authentication
 * Database integration
 
+---
+
+🚀 Live Demo
+
+🔗 Live Application:
+https://resume-analyzer-nksxunajgn2xbxvfgrkcna.streamlit.app/
+
+---
+
+👩‍💻 Author
+
+Developed by Iswarya V
